@@ -114,6 +114,8 @@ def batch_fetch_and_store(matchtype=52, batch_size=10):
     position_data = fetch_position_meta()
     pos_map = {p['spposition']: p['desc'] for p in position_data}
     conn = get_db()
+    
+    # 해당 matchtype에 대해 이미 존재하는 spid 목록 가져오기
     existing = set(r['spid'] for r in conn.execute("SELECT spid FROM player_stats WHERE matchtype=?", (matchtype,)).fetchall())
     mt_name = MATCHTYPE_MAP.get(matchtype, f"기타({matchtype})")
     fetched_count = 0
@@ -122,27 +124,41 @@ def batch_fetch_and_store(matchtype=52, batch_size=10):
         batch = spid_data[i:i+batch_size]
         players = [{"id": p["id"], "po": 25} for p in batch]
         result = call_ranker_stats(players, matchtype)
+        
         if result:
             for item in result:
                 spid = item['spid']
                 if spid in existing: continue
+                
                 player_name = next((p['name'] for p in batch if p['id'] == spid), "Unknown")
+                
+                # 19개의 컬럼에 맞춰 19개의 값을 정확히 전달
                 conn.execute("""
                     INSERT INTO player_stats (
                         spid, spname, sp_position, matchtype, matchtype_name,
-                        shoot, effectiveShoot, assist, goal, dribble, dribbleTry,
-                        dribbleSuccess, passTry, passSuccess, block, tackle,
-                        matchCount, createDate, fetchedAt
-                    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                        shoot, effectiveShoot, assist, goal, dribble, 
+                        dribbleTry, dribbleSuccess, passTry, passSuccess, block, 
+                        tackle, matchCount, createDate, fetchedAt
+                    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                 """, (
-                    spid, player_name, pos_map.get(item['spPosition'], 'Unknown'),
-                    matchtype, mt_name, item['status'].get('shoot', 0),
-                    item['status'].get('effectiveShoot', 0), item['status'].get('assist', 0),
-                    item['status'].get('goal', 0), item['status'].get('dribble', 0),
-                    item['status'].get('dribbleTry', 0), item['status'].get('dribbleSuccess', 0),
-                    item['status'].get('passTry', 0), item['status'].get('passSuccess', 0),
-                    item['status'].get('block', 0), item['status'].get('tackle', 0),
-                    item['status'].get('matchCount', 0), item.get('createDate', ''),
+                    spid, 
+                    player_name, 
+                    pos_map.get(item['spPosition'], 'Unknown'),
+                    matchtype, 
+                    mt_name, 
+                    item['status'].get('shoot', 0),
+                    item['status'].get('effectiveShoot', 0), 
+                    item['status'].get('assist', 0),
+                    item['status'].get('goal', 0), 
+                    item['status'].get('dribble', 0),
+                    item['status'].get('dribbleTry', 0), 
+                    item['status'].get('dribbleSuccess', 0),
+                    item['status'].get('passTry', 0), 
+                    item['status'].get('passSuccess', 0),
+                    item['status'].get('block', 0), 
+                    item['status'].get('tackle', 0),
+                    item['status'].get('matchCount', 0), 
+                    item.get('createDate', ''),
                     datetime.now().isoformat()
                 ))
                 existing.add(spid)
