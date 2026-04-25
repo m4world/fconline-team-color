@@ -3,493 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FC Online 랭커 선수 사용 현황</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <title>FC Online 랭커 기용 분석</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #0a0e17;
-            color: #e0e0e0;
-            min-height: 100vh;
-        }
-        .header {
-            background: linear-gradient(135deg, #1a1f35 0%, #0d1225 100%);
-            padding: 24px 32px;
-            border-bottom: 2px solid #2a3a5c;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .header h1 {
-            font-size: 24px;
-            color: #fff;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .header h1 .icon { font-size: 28px; }
-        .header-controls { display: flex; gap: 12px; align-items: center; }
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            transition: all 0.2s;
-        }
-        .btn-primary {
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
-            color: white;
-        }
-        .btn-primary:hover { background: linear-gradient(135deg, #2563eb, #1d4ed8); }
-        .btn-success {
-            background: linear-gradient(135deg, #10b981, #059669);
-            color: white;
-        }
-        .btn-success:hover { background: linear-gradient(135deg, #059669, #047857); }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .matchtype-select {
-            padding: 10px 16px;
-            border-radius: 8px;
-            border: 1px solid #2a3a5c;
-            background: #1a1f35;
-            color: #e0e0e0;
-            font-size: 14px;
-        }
-        .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-        .stat-card {
-            background: linear-gradient(135deg, #1a1f35, #151a2e);
-            border: 1px solid #2a3a5c;
-            border-radius: 12px;
-            padding: 20px;
-            text-align: center;
-        }
-        .stat-card .value {
-            font-size: 32px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .stat-card .label {
-            font-size: 13px;
-            color: #8892a8;
-            margin-top: 4px;
-        }
-        .chart-section {
-            background: linear-gradient(135deg, #1a1f35, #151a2e);
-            border: 1px solid #2a3a5c;
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 24px;
-        }
-        .chart-section h2 {
-            font-size: 18px;
-            margin-bottom: 16px;
-            color: #c8d0e0;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .chart-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 24px;
-            margin-bottom: 24px;
-        }
-        .chart-container { position: relative; height: 350px; }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th, td {
-            padding: 12px 16px;
-            text-align: left;
-            border-bottom: 1px solid #1e2a45;
-        }
-        th {
-            background: #0d1225;
-            color: #8892a8;
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            position: sticky;
-            top: 0;
-        }
-        td { font-size: 14px; }
-        tr:hover td { background: #1a2240; }
-        .table-wrapper {
-            max-height: 500px;
-            overflow-y: auto;
-            border-radius: 8px;
-            border: 1px solid #2a3a5c;
-        }
-        .table-wrapper::-webkit-scrollbar { width: 6px; }
-        .table-wrapper::-webkit-scrollbar-track { background: #0d1225; }
-        .table-wrapper::-webkit-scrollbar-thumb { background: #2a3a5c; border-radius: 3px; }
-        .badge {
-            display: inline-block;
-            padding: 3px 10px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-        .badge-st { background: #dc2626; color: white; }
-        .badge-cm { background: #2563eb; color: white; }
-        .badge-cam { background: #7c3aed; color: white; }
-        .badge-cb { background: #059669; color: white; }
-        .badge-gk { background: #d97706; color: white; }
-        .badge-default { background: #4b5563; color: white; }
-        .loading {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 200px;
-            color: #8892a8;
-            font-size: 16px;
-        }
-        .spinner {
-            width: 24px; height: 24px;
-            border: 3px solid #2a3a5c;
-            border-top-color: #3b82f6;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin-right: 12px;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .status-msg {
-            padding: 12px 20px;
-            border-radius: 8px;
-            margin-bottom: 16px;
-            font-size: 14px;
-        }
-        .status-success { background: #065f46; border: 1px solid #10b981; color: #a7f3d0; }
-        .status-error { background: #7f1d1d; border: 1px solid #ef4444; color: #fecaca; }
-        .position-color {
-            display: inline-block;
-            width: 12px; height: 12px;
-            border-radius: 3px;
-            margin-right: 6px;
-            vertical-align: middle;
-        }
+        body { background-color: #0f172a; color: #f1f5f9; }
+        .card { background-color: #1e293b; border-radius: 0.75rem; padding: 1.5rem; }
+        .table-header { background-color: #334155; }
     </style>
 </head>
-<body>
-    <div class="header">
-        <h1><span class="icon">⚽</span> FC Online 랭커 선수 사용 현황</h1>
-        <div class="header-controls">
-            <select id="matchtypeSelect" class="matchtype-select">
-                <option value="52">감독모드</option>
-                <option value="50">공식경기</option>
-            </select>
-            <button id="fetchBtn" class="btn btn-success" onclick="fetchData()">
-                🔄 데이터 수집
-            </button>
-        </div>
-    </div>
+<body class="p-4 md:p-8">
+    <div class="max-w-6xl mx-auto">
+        <header class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold text-blue-400">랭커 최다 기용 선수 분석</h1>
+            <button onclick="triggerFetch()" class="bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg font-medium transition">데이터 수집</button>
+        </header>
 
-    <div class="container">
-        <div id="statusMsg"></div>
-
-        <div class="stats-grid" id="statsGrid">
-            <div class="stat-card"><div class="value" id="totalPlayers">-</div><div class="label">총 등록 선수</div></div>
-            <div class="stat-card"><div class="value" id="totalMatches">-</div><div class="label">총 매치 카운트</div></div>
-            <div class="stat-card"><div class="value" id="topPosition">-</div><div class="label">가장 많이 쓰인 포지션</div></div>
-            <div class="stat-card"><div class="value" id="avgGoals">-</div><div class="label">평균 득점</div></div>
-        </div>
-
-        <div class="chart-row">
-            <div class="chart-section">
-                <h2>📊 포지션별 사용 빈도</h2>
-                <div class="chart-container"><canvas id="positionChart"></canvas></div>
-            </div>
-            <div class="chart-section">
-                <h2>🎯 포지션별 평균 스탯 (득점/도움/드리블성공)</h2>
-                <div class="chart-container"><canvas id="statsChart"></canvas></div>
-            </div>
-        </div>
-
-        <div class="chart-section">
-            <h2>🏆 사용 빈도 TOP 30 선수</h2>
-            <div class="table-wrapper">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>순위</th><th>선수명</th><th>포지션</th><th>경기유형</th>
-                            <th>사용횟수</th><th>평균득점</th><th>평균도움</th>
-                            <th>드리블성공</th><th>패스성공</th>
-                        </tr>
-                    </thead>
-                    <tbody id="topPlayersBody">
-                        <tr><td colspan="9" class="loading"><div class="spinner"></div>로딩 중...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="chart-section">
-            <h2>📋 포지션별 상세 통계</h2>
-            <div class="table-wrapper">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>포지션</th><th>사용횟수</th><th>평균득점</th><th>평균도움</th>
-                            <th>평균드리블</th><th>드리블성공률</th><th>평균패스성공</th>
-                            <th>평균태클</th><th>평균블록</th><th>평균경기수</th>
-                        </tr>
-                    </thead>
-                    <tbody id="positionStatsBody">
-                        <tr><td colspan="10" class="loading"><div class="spinner"></div>로딩 중...</td></tr>
-                    </tbody>
-                </table>
-            </div>
+        <div id="position-container" class="space-y-12">
+            <div class="text-center py-20 text-gray-400">데이터를 불러오는 중입니다...</div>
         </div>
     </div>
 
     <script>
-        let positionChart = null;
-        let statsChart = null;
-
-        const POS_COLORS = {
-            'GK': '#d97706', 'SW': '#7c3aed', 'RWB': '#2563eb', 'RB': '#2563eb',
-            'RCB': '#059669', 'CB': '#059669', 'LCB': '#059669', 'LB': '#2563eb',
-            'LWB': '#2563eb', 'RDM': '#7c3aed', 'CDM': '#7c3aed', 'LDM': '#7c3aed',
-            'RM': '#2563eb', 'RCM': '#2563eb', 'CM': '#2563eb', 'LCM': '#2563eb',
-            'LM': '#2563eb', 'RAM': '#dc2626', 'CAM': '#7c3aed', 'LAM': '#dc2626',
-            'RF': '#dc2626', 'CF': '#dc2626', 'LF': '#dc2626', 'RW': '#dc2626',
-            'RS': '#dc2626', 'ST': '#dc2626', 'LS': '#dc2626', 'LW': '#dc2626',
-            'SUB': '#4b5563'
-        };
-
-        function getPosBadge(pos) {
-            const cls = {
-                'ST': 'badge-st', 'CF': 'badge-st', 'RF': 'badge-st', 'LF': 'badge-st',
-                'RS': 'badge-st', 'LS': 'badge-st', 'RW': 'badge-st', 'LW': 'badge-st',
-                'CAM': 'badge-cam', 'RAM': 'badge-cam', 'LAM': 'badge-cam',
-                'CM': 'badge-cm', 'CDM': 'badge-cm', 'RCM': 'badge-cm', 'LCM': 'badge-cm',
-                'RM': 'badge-cm', 'LM': 'badge-cm', 'RDM': 'badge-cm', 'LDM': 'badge-cm',
-                'CB': 'badge-cb', 'RCB': 'badge-cb', 'LCB': 'badge-cb',
-                'RB': 'badge-default', 'LB': 'badge-default', 'RWB': 'badge-default',
-                'LWB': 'badge-default', 'SW': 'badge-default',
-                'GK': 'badge-gk', 'SUB': 'badge-default'
-            }[pos] || 'badge-default';
-            return `<span class="badge ${cls}">${pos}</span>`;
-        }
-
-        async function loadOverview() {
+        async function loadData() {
             try {
                 const res = await fetch('/api/overview');
                 const data = await res.json();
-                
-                document.getElementById('totalPlayers').textContent = data.total_players.toLocaleString();
-                
-                let totalMatches = 0;
-                data.top_players.forEach(p => totalMatches += p.matchCount || 0);
-                document.getElementById('totalMatches').textContent = totalMatches.toLocaleString();
-                
-                if (data.by_position.length > 0) {
-                    document.getElementById('topPosition').textContent = data.by_position[0].sp_position;
+                const container = document.getElementById('position-container');
+                container.innerHTML = '';
+
+                if (Object.keys(data.positions).length === 0) {
+                    container.innerHTML = '<div class="text-center py-20">수집된 데이터가 없습니다. 수집 버튼을 눌러주세요.</div>';
+                    return;
                 }
-                
-                let avgG = 0;
-                data.top_players.forEach(p => avgG += (p.goal || 0));
-                document.getElementById('avgGoals').textContent = data.top_players.length ? (avgG / data.top_players.length).toFixed(2) : '0';
-                
-                renderTopPlayers(data.top_players);
-                renderPositionStats(data.by_position);
-                renderPositionChart(data.by_position);
-                renderStatsChart(data.by_position);
+
+                // 포지션별 섹션 생성
+                for (const [pos, players] of Object.entries(data.positions)) {
+                    const section = document.createElement('section');
+                    section.className = 'card shadow-xl';
+                    
+                    section.innerHTML = `
+                        <h2 class="text-xl font-bold mb-4 text-blue-300 border-b border-gray-700 pb-2">${pos}</h2>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left">
+                                <thead class="table-header text-gray-200">
+                                    <tr>
+                                        <th class="p-3">순위</th>
+                                        <th class="p-3">선수명</th>
+                                        <th class="p-3">유형</th>
+                                        <th class="p-3 text-right">총 경기수</th>
+                                        <th class="p-3 text-right">평균 득점</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${players.slice(0, 20).map((p, i) => `
+                                        <tr class="border-b border-gray-700 hover:bg-gray-700/50 transition">
+                                            <td class="p-3 font-bold text-gray-400">${i + 1}</td>
+                                            <td class="p-3 font-semibold">${p.spname}</td>
+                                            <td class="p-3 text-gray-400 text-xs">${p.matchtype_name}</td>
+                                            <td class="p-3 text-right text-blue-400 font-mono">${p.matchCount.toLocaleString()}</td>
+                                            <td class="p-3 text-right text-green-400">${(p.avg_goal || 0).toFixed(2)}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                    container.appendChild(section);
+                }
             } catch (e) {
-                console.error('Overview load error:', e);
+                console.error(e);
             }
         }
 
-        function renderTopPlayers(players) {
-            const tbody = document.getElementById('topPlayersBody');
-            if (!players || players.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:#8892a8;">데이터가 없습니다. "데이터 수집" 버튼을 눌러주세요.</td></tr>';
-                return;
-            }
-            tbody.innerHTML = players.map((p, i) => `
-                <tr>
-                    <td><strong>${i + 1}</strong></td>
-                    <td>${p.spname || 'Unknown'}</td>
-                    <td>${getPosBadge(p.sp_position)}</td>
-                    <td>${p.matchtype_name || '-'}</td>
-                    <td><strong>${(p.matchCount || p.usage_count || 0).toLocaleString()}</strong></td>
-                    <td>${(p.avg_goals || p.goal || 0).toFixed(2)}</td>
-                    <td>${(p.avg_assists || p.assist || 0).toFixed(2)}</td>
-                    <td>${(p.avg_dribble_success || p.dribbleSuccess || 0).toFixed(2)}</td>
-                    <td>${(p.avg_pass_success || p.passSuccess || 0).toFixed(2)}</td>
-                </tr>
-            `).join('');
+        async function triggerFetch() {
+            alert('데이터 수집을 시작합니다. 잠시 후 새로고침 해주세요.');
+            await fetch('/api/fetch', { method: 'POST' });
         }
 
-        function renderPositionStats(stats) {
-            const tbody = document.getElementById('positionStatsBody');
-            if (!stats || stats.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:40px;color:#8892a8;">데이터가 없습니다.</td></tr>';
-                return;
-            }
-            tbody.innerHTML = stats.map(s => `
-                <tr>
-                    <td><span class="position-color" style="background:${POS_COLORS[s.sp_position] || '#4b5563'}"></span>${getPosBadge(s.sp_position)}</td>
-                    <td><strong>${s.count}</strong></td>
-                    <td>${(s.avg_goal || 0).toFixed(2)}</td>
-                    <td>${(s.avg_assist || 0).toFixed(2)}</td>
-                    <td>${(s.avg_dribble || 0).toFixed(2)}</td>
-                    <td>${(s.avg_dribble_success || 0).toFixed(2)}</td>
-                    <td>${(s.avg_pass_success || 0).toFixed(2)}</td>
-                    <td>${(s.avg_tackle || 0).toFixed(2)}</td>
-                    <td>${(s.avg_block || 0).toFixed(2)}</td>
-                    <td>${(s.avg_matches || 0).toFixed(1)}</td>
-                </tr>
-            `).join('');
-        }
-
-        function renderPositionChart(byPosition) {
-            const ctx = document.getElementById('positionChart').getContext('2d');
-            if (positionChart) positionChart.destroy();
-            
-            const sorted = [...byPosition].sort((a, b) => b.count - a.count).slice(0, 15);
-            
-            positionChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: sorted.map(s => s.sp_position),
-                    datasets: [{
-                        label: '사용 횟수',
-                        data: sorted.map(s => s.count),
-                        backgroundColor: sorted.map(s => POS_COLORS[s.sp_position] || '#3b82f6'),
-                        borderRadius: 6,
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            backgroundColor: '#1a1f35',
-                            titleColor: '#fff',
-                            bodyColor: '#e0e0e0',
-                            borderColor: '#2a3a5c',
-                            borderWidth: 1,
-                        }
-                    },
-                    scales: {
-                        x: {
-                            ticks: { color: '#8892a8', font: { size: 11 } },
-                            grid: { color: '#1e2a45' }
-                        },
-                        y: {
-                            ticks: { color: '#8892a8' },
-                            grid: { color: '#1e2a45' }
-                        }
-                    }
-                }
-            });
-        }
-
-        function renderStatsChart(byPosition) {
-            const ctx = document.getElementById('statsChart').getContext('2d');
-            if (statsChart) statsChart.destroy();
-            
-            const sorted = [...byPosition].sort((a, b) => b.count - a.count).slice(0, 12);
-            
-            statsChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: sorted.map(s => s.sp_position),
-                    datasets: [
-                        {
-                            label: '평균 득점',
-                            data: sorted.map(s => +(s.avg_goal || 0).toFixed(2)),
-                            backgroundColor: '#ef4444',
-                            borderRadius: 4,
-                        },
-                        {
-                            label: '평균 도움',
-                            data: sorted.map(s => +(s.avg_assist || 0).toFixed(2)),
-                            backgroundColor: '#3b82f6',
-                            borderRadius: 4,
-                        },
-                        {
-                            label: '드리블 성공',
-                            data: sorted.map(s => +(s.avg_dribble_success || 0).toFixed(2)),
-                            backgroundColor: '#10b981',
-                            borderRadius: 4,
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            labels: { color: '#e0e0e0', font: { size: 11 } }
-                        },
-                        tooltip: {
-                            backgroundColor: '#1a1f35',
-                            titleColor: '#fff',
-                            bodyColor: '#e0e0e0',
-                            borderColor: '#2a3a5c',
-                            borderWidth: 1,
-                        }
-                    },
-                    scales: {
-                        x: {
-                            ticks: { color: '#8892a8', font: { size: 11 } },
-                            grid: { color: '#1e2a45' }
-                        },
-                        y: {
-                            ticks: { color: '#8892a8' },
-                            grid: { color: '#1e2a45' }
-                        }
-                    }
-                }
-            });
-        }
-
-        async function fetchData() {
-            const btn = document.getElementById('fetchBtn');
-            const mt = document.getElementById('matchtypeSelect').value;
-            btn.disabled = true;
-            btn.textContent = '⏳ 수집 중...';
-            
-            showStatus('데이터 수집을 시작합니다. 시간이 걸릴 수 있습니다.', 'success');
-            
-            try {
-                await fetch('/api/fetch?matchtype=' + mt, { method: 'POST' });
-                showStatus('데이터 수집이 시작되었습니다. 몇 분 후 새로고침 해주세요.', 'success');
-                setTimeout(() => {
-                    btn.disabled = false;
-                    btn.textContent = '🔄 데이터 수집';
-                    loadOverview();
-                }, 5000);
-            } catch (e) {
-                showStatus('데이터 수집 중 오류가 발생했습니다.', 'error');
-                btn.disabled = false;
-                btn.textContent = '🔄 데이터 수집';
-            }
-        }
-
-        function showStatus(msg, type) {
-            const div = document.getElementById('statusMsg');
-            div.innerHTML = `<div class="status-msg status-${type}">${msg}</div>`;
-            setTimeout(() => { div.innerHTML = ''; }, 10000);
-        }
-
-        // 초기 로드
-        loadOverview();
+        loadData();
+        // 30초마다 데이터 갱신 확인
+        setInterval(loadData, 30000);
     </script>
 </body>
 </html>
